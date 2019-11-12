@@ -1,10 +1,6 @@
-#library(dplyr)
 library(MASS)
 raw = read.csv(file="./imports-85.data", header=FALSE, sep=",", na.strings = "?")
 data = na.omit(raw)
-
-#cname = c('symboling', 'make', 'fuel_type', 'aspiration', 'num_of_doors',
-#          'body_style', 'drive_wheels', 'engine_type', 'num_of_cylinders', 'fuel_system')
 
 cname = c("symboling", "normalized_losses", "make", "fuel_type", "aspiration",
           "num_of_doors", "body_style", "drive_wheels", "engine_location", "wheel_base",
@@ -12,11 +8,7 @@ cname = c("symboling", "normalized_losses", "make", "fuel_type", "aspiration",
           "engine_size", "fuel_system", "bore", "stroke", "compression_ratio", "horsepower",
           "peak_rpm", "city_mpg", "highway_mpg", "price")
 
-
 colnames(data) = cname
-## won't need engine location because there's only one type of engine location 
-data <- subset(data, select = -c(engine_location))
-
 data <- transform(data, 
                   symboling = as.factor(symboling),
                   make = as.factor(make),
@@ -29,6 +21,13 @@ data <- transform(data,
                   num_of_cylinders = as.factor(num_of_cylinders),
                   fuel_system = as.factor(fuel_system))
 
+## won't need engine_location variable because there's only one type of engine location 
+data <- subset(data, select = -c(engine_location))
+
+## Apply factor() again to remove excessive level
+data <- lapply(data, function(x) if(is.factor(x)) factor(x) else x)
+
+## Do the stepwise regression for feature selection
 stepAIC(lm(price~.,data=data), direction='both')
 
 ## The result of stepAIC
