@@ -10,7 +10,7 @@ cname = c("symboling", "normalized_losses", "make", "fuel_type", "aspiration",
 
 colnames(data) = cname
 data <- transform(data, 
-                  symboling = as.factor(symboling),
+                  #symboling = as.factor(symboling),
                   make = as.factor(make),
                   fuel_type = as.factor(fuel_type),
                   aspiration = as.factor(aspiration),
@@ -25,10 +25,10 @@ data <- transform(data,
 data <- subset(data, select = -c(engine_location))
 
 ## Apply factor() again to remove excessive level
-data <- lapply(data, function(x) if(is.factor(x)) factor(x) else x)
+data[] <- lapply(data, function(x) if(is.factor(x)) factor(x) else x)
 
 ## Do the stepwise regression for feature selection
-stepAIC(lm(price~.,data=data), direction='both')
+stepAIC(lm(price~.,data=data), direction='both', trace = FALSE)
 
 ## The result of stepAIC
 summary(lm(formula = price ~ symboling + make + aspiration + num_of_doors + 
@@ -41,17 +41,17 @@ alias(lm(formula = price ~ symboling + make + aspiration + num_of_doors +
            body_style + drive_wheels + wheel_base + length + width + 
            height + curb_weight + engine_type + fuel_system + bore + 
            compression_ratio + horsepower + peak_rpm, data = data))
-## found engine type is an alias
+## found engine_type is an alias
 
 car::vif(lm(formula = price ~ symboling + make + aspiration + num_of_doors + 
               body_style + drive_wheels + wheel_base + length + width + 
               height + curb_weight + fuel_system + bore + 
               compression_ratio + horsepower + peak_rpm, data = data))
-##After vif, we can remove compression_ratio
+##After vif, we can remove compression_ratio (since > 10)
 
 ## remove num_doors, width, horsepower, peak_rpm
 summary(lm(formula = price ~ symboling + make + aspiration + 
-             body_style + drive_wheels + wheel_base + length  + 
+             body_style + drive_wheels + wheel_base + length + engine_type +
              height + curb_weight + fuel_system + bore, data = data))
 ## Adjusted R^2: 0.9604
 
@@ -62,17 +62,29 @@ summary(lm(formula = price ~ make + aspiration +
 ## Adjusted R^2: 0.9566
 
 
-################# ANOVA
+######################################### ANOVA
 ## ANOVA
+boxplot(data$price ~ data$engine_type,col=rainbow(7))
+
 aov_cont <- aov(data$price ~ data$engine_type)
-summary(aov_cont)
+shapiro.test(aov_cont$residuals)
+#summary(aov_cont)
 
 bc <- boxcox(data$price ~ data$engine_type)
 (trans <- bc$x[which.max(bc$y)])
 
 aov_cont_new = aov(((data$price^trans-1)/trans) ~ data$engine_type)
 summary(aov_cont_new)
+#summary.lm(aov_cont_new)
+
+plot(aov_cont_new)
+
+
+#kruskal.test
+
+
 shapiro.test(aov_cont_new$residuals)
+
 
 ## Check assumption of homogeneity of variance
 bartlett.test(((data$price^trans-1)/trans) ~ data$engine_type)
@@ -83,5 +95,5 @@ qqline(aov_cont_new$residuals)
 
 tuk <- TukeyHSD(aov_cont_new)
 tuk
+# ohc-dohc, ohcf-dohc, ohcv-ohc, ohcv-ohcf
 
-boxplot(data$price ~ data$engine_type)
