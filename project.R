@@ -97,3 +97,11 @@ tuk <- TukeyHSD(aov_cont_new)
 tuk
 # ohc-dohc, ohcf-dohc, ohcv-ohc, ohcv-ohcf
 
+pairwise.t.test(data$price, data$engine_type, p.adj = "bonf")
+# ohc-dohc, ohcf-dohc, ohc-ohcv, ohcf-ohcv
+scheffe.test(aov_cont_new,"engine_type")
+
+PostHocTest(aov_cont_new, method = "lsd")
+PostHocTest(aov_cont_new, method = "hsd")
+PostHocTest(aov_cont_new, method = "scheffe")
+PostHocTest(aov_cont_new, method = "bonferroni")
